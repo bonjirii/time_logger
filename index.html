@@ -129,7 +129,7 @@
         li.innerHTML = `
           <span>${task}</span>
           <div class="task-timer">
-            <span class="time-display" data-task="${task}" contenteditable="true">${formatTime(taskTime)}</span>
+            <span class="time-display" data-task="${task}" contenteditable="false">${formatTime(taskTime)}</span>
             <button class="edit-button">...</button>
           </div>
         `;
@@ -138,18 +138,31 @@
           e.stopPropagation();
           handleEditTask(task);
         });
-        li.querySelector(".time-display").addEventListener("blur", (e) => {
-          const newValue = parseTime(e.target.textContent);
-          if (!isNaN(newValue)) {
-            const todayKey = getTodayKey();
-            if (!timeData[task]) timeData[task] = {};
-            timeData[task][todayKey] = newValue;
-            localStorage.setItem("timeData", JSON.stringify(timeData));
-            renderTasks();
-          }
+        const timeDisplay = li.querySelector(".time-display");
+        timeDisplay.addEventListener("click", (e) => {
+          e.stopPropagation();
+          enableEditing(timeDisplay, task);
         });
         tasksList.appendChild(li);
       }
+    }
+
+    function enableEditing(element, task) {
+      element.contentEditable = "true";
+      element.focus();
+      element.addEventListener("blur", () => {
+        const newValue = parseTime(element.textContent);
+        if (!isNaN(newValue)) {
+          const todayKey = getTodayKey();
+          if (!timeData[task]) timeData[task] = {};
+          timeData[task][todayKey] = newValue;
+          localStorage.setItem("timeData", JSON.stringify(timeData));
+          renderTasks();
+        } else {
+          element.textContent = formatTime(timeData[task][getTodayKey()] || 0);
+        }
+        element.contentEditable = "false";
+      }, { once: true });
     }
 
     function handleEditTask(task) {

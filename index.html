@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Time Logger</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+    }
+    #main {
+      display: flex;
+      flex-grow: 1;
+    }
+    #tasks {
+      width: 300px;
+      border-right: 1px solid #ccc;
+      padding: 10px;
+    }
+    #tasks-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #tasks-list {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+    }
+    .task-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+    .task-item.active {
+      background-color: #f0f8ff;
+    }
+    .task-timer {
+      display: flex;
+      gap: 5px;
+    }
+    #timer-controls {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #calendar {
+      display: none;
+      padding: 10px;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="main">
+    <div id="tasks">
+      <div id="tasks-header">
+        <span>Tasks</span>
+        <button id="new-task-button">+</button>
+      </div>
+      <ul id="tasks-list">
+        <li class="task-item active" data-task="default">
+          <span>default</span>
+          <div class="task-timer">
+            <span class="time-display" data-task="default">00h 00m 00s</span>
+            <button class="edit-button">...</button>
+          </div>
+        </li>
+      </ul>
+    </div>
+    <div id="timer-controls">
+      <button id="start-stop-button">▶</button>
+      <button id="calendar-button">📅</button>
+    </div>
+    <div id="calendar">
+      <div id="calendar-header">
+        <button id="prev-month">&lt;</button>
+        <span id="current-month"></span>
+        <button id="next-month">&gt;</button>
+      </div>
+      <div id="calendar-body"></div>
+    </div>
+  </div>
+
+  <script>
+    const tasksList = document.getElementById("tasks-list");
+    const newTaskButton = document.getElementById("new-task-button");
+    const startStopButton = document.getElementById("start-stop-button");
+    const calendarButton = document.getElementById("calendar-button");
+    const calendar = document.getElementById("calendar");
+    let activeTask = "default";
+    let timer = null;
+    let timeData = JSON.parse(localStorage.getItem("timeData")) || { default: 0 };
+
+    function renderTasks() {
+      tasksList.innerHTML = "";
+      for (const task in timeData) {
+        const li = document.createElement("li");
+        li.className = `task-item ${task === activeTask ? "active" : ""}`;
+        li.dataset.task = task;
+        li.innerHTML = `
+          <span>${task}</span>
+          <div class="task-timer">
+            <span class="time-display" data-task="${task}">${formatTime(timeData[task])}</span>
+            <button class="edit-button">...</button>
+          </div>
+        `;
+        li.addEventListener("click", () => setActiveTask(task));
+        tasksList.appendChild(li);
+      }
+    }
+
+    function setActiveTask(task) {
+      activeTask = task;
+      renderTasks();
+    }
+
+    function startTimer() {
+      if (timer) return;
+      timer = setInterval(() => {
+        timeData[activeTask] = (timeData[activeTask] || 0) + 1;
+        localStorage.setItem("timeData", JSON.stringify(timeData));
+        renderTasks();
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timer);
+      timer = null;
+    }
+
+    function toggleTimer() {
+      if (timer) {
+        stopTimer();
+      } else {
+        startTimer();
+      }
+    }
+
+    function formatTime(seconds) {
+      const h = Math.floor(seconds / 3600).toString().padStart(2, "0");
+      const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0");
+      const s = (seconds % 60).toString().padStart(2, "0");
+      return `${h}h ${m}m ${s}s`;
+    }
+
+    newTaskButton.addEventListener("click", () => {
+      const taskName = prompt("Enter task name:");
+      if (taskName && !timeData[taskName]) {
+        timeData[taskName] = 0;
+        localStorage.setItem("timeData", JSON.stringify(timeData));
+        renderTasks();
+      }
+    });
+
+    startStopButton.addEventListener("click", toggleTimer);
+
+    renderTasks();
+  </script>
+</body>
+</html>

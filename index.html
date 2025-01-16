@@ -129,7 +129,23 @@
           </div>
         `;
         li.addEventListener("click", () => setActiveTask(task));
+        li.querySelector(".edit-button").addEventListener("click", (e) => {
+          e.stopPropagation();
+          handleEditTask(task);
+        });
         tasksList.appendChild(li);
+      }
+    }
+
+    function handleEditTask(task) {
+      const confirmDelete = confirm(`Are you sure you want to delete the task "${task}"?`);
+      if (confirmDelete) {
+        delete timeData[task];
+        localStorage.setItem("timeData", JSON.stringify(timeData));
+        if (activeTask === task) {
+          activeTask = "default";
+        }
+        renderTasks();
       }
     }
 

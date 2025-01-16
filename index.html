@@ -46,6 +46,11 @@
       display: flex;
       gap: 5px;
     }
+    .editable {
+      border: 1px solid #ccc;
+      padding: 2px;
+      text-align: center;
+    }
     #timer-controls {
       padding: 10px;
       display: flex;
@@ -124,7 +129,7 @@
         li.innerHTML = `
           <span>${task}</span>
           <div class="task-timer">
-            <span class="time-display" data-task="${task}">${formatTime(taskTime)}</span>
+            <span class="time-display" data-task="${task}" contenteditable="true">${formatTime(taskTime)}</span>
             <button class="edit-button">...</button>
           </div>
         `;
@@ -133,12 +138,22 @@
           e.stopPropagation();
           handleEditTask(task);
         });
+        li.querySelector(".time-display").addEventListener("blur", (e) => {
+          const newValue = parseTime(e.target.textContent);
+          if (!isNaN(newValue)) {
+            const todayKey = getTodayKey();
+            if (!timeData[task]) timeData[task] = {};
+            timeData[task][todayKey] = newValue;
+            localStorage.setItem("timeData", JSON.stringify(timeData));
+            renderTasks();
+          }
+        });
         tasksList.appendChild(li);
       }
     }
 
     function handleEditTask(task) {
-      const confirmDelete = confirm(`Are you sure you want to delete the task "${task}"?`);
+      const confirmDelete = confirm(`Are you sure you want to delete the task \"${task}\"?`);
       if (confirmDelete) {
         delete timeData[task];
         localStorage.setItem("timeData", JSON.stringify(timeData));
@@ -183,6 +198,13 @@
       const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0");
       const s = (seconds % 60).toString().padStart(2, "0");
       return `${h}h ${m}m ${s}s`;
+    }
+
+    function parseTime(timeString) {
+      const match = timeString.match(/(\d+)h (\d+)m (\d+)s/);
+      if (!match) return NaN;
+      const [, h, m, s] = match.map(Number);
+      return h * 3600 + m * 60 + s;
     }
 
     function renderCalendar() {

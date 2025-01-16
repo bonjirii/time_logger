@@ -114,7 +114,20 @@
     let currentDate = new Date();
 
     function getTodayKey(date = new Date()) {
-      const adjustedDate = new Date(date.getTime() - 3 * 60 * 60 * 1000); // Adjust to 3 AM
+      // ローカル時刻で計算するため、年、月、日を取得し、3時を基準に調整
+      const localYear = date.getFullYear();
+      const localMonth = date.getMonth();
+      const localDate = date.getDate();
+      const localHours = date.getHours();
+    
+      // 午前3時前なら前日の日付を返す
+      if (localHours < 3) {
+        const adjustedDate = new Date(localYear, localMonth, localDate - 1);
+        return adjustedDate.toISOString().split("T")[0];
+      }
+    
+      // それ以外は当日の日付を返す
+      const adjustedDate = new Date(localYear, localMonth, localDate);
       return adjustedDate.toISOString().split("T")[0];
     }
 

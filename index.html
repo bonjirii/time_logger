@@ -105,19 +105,26 @@
     const nextMonthButton = document.getElementById("next-month");
     let activeTask = "default";
     let timer = null;
-    let timeData = JSON.parse(localStorage.getItem("timeData")) || { default: 0 };
+    let timeData = JSON.parse(localStorage.getItem("timeData")) || { default: {} };
     let currentDate = new Date();
+
+    function getTodayKey(date = new Date()) {
+      const adjustedDate = new Date(date.getTime() - 3 * 60 * 60 * 1000); // Adjust to 3 AM
+      return adjustedDate.toISOString().split("T")[0];
+    }
 
     function renderTasks() {
       tasksList.innerHTML = "";
       for (const task in timeData) {
+        const todayKey = getTodayKey();
+        const taskTime = timeData[task][todayKey] || 0;
         const li = document.createElement("li");
         li.className = `task-item ${task === activeTask ? "active" : ""}`;
         li.dataset.task = task;
         li.innerHTML = `
           <span>${task}</span>
           <div class="task-timer">
-            <span class="time-display" data-task="${task}">${formatTime(timeData[task])}</span>
+            <span class="time-display" data-task="${task}">${formatTime(taskTime)}</span>
             <button class="edit-button">...</button>
           </div>
         `;
@@ -134,7 +141,9 @@
     function startTimer() {
       if (timer) return;
       timer = setInterval(() => {
-        timeData[activeTask] = (timeData[activeTask] || 0) + 1;
+        const todayKey = getTodayKey();
+        if (!timeData[activeTask]) timeData[activeTask] = {};
+        timeData[activeTask][todayKey] = (timeData[activeTask][todayKey] || 0) + 1;
         localStorage.setItem("timeData", JSON.stringify(timeData));
         renderTasks();
       }, 1000);
@@ -182,9 +191,13 @@
         dayCell.textContent = day;
         dayCell.style.border = "1px solid #ccc";
         dayCell.style.padding = "5px";
-        const taskDetails = Object.entries(timeData).map(([task, time]) => {
-          return `<div>${task}: ${formatTime(time)}</div>`;
+
+        const dayKey = getTodayKey(new Date(year, month, day, 3));
+        const taskDetails = Object.entries(timeData).map(([task, times]) => {
+          const taskTime = times[dayKey] || 0;
+          return `<div>${task}: ${formatTime(taskTime)}</div>`;
         }).join("");
+
         dayCell.innerHTML += taskDetails;
         calendarGrid.appendChild(dayCell);
       }
@@ -210,7 +223,7 @@
     newTaskButton.addEventListener("click", () => {
       const taskName = prompt("Enter task name:");
       if (taskName && !timeData[taskName]) {
-        timeData[taskName] = 0;
+        timeData[taskName] = {};
         localStorage.setItem("timeData", JSON.stringify(timeData));
         renderTasks();
       }

@@ -99,9 +99,14 @@
     const startStopButton = document.getElementById("start-stop-button");
     const calendarButton = document.getElementById("calendar-button");
     const calendar = document.getElementById("calendar");
+    const calendarBody = document.getElementById("calendar-body");
+    const currentMonth = document.getElementById("current-month");
+    const prevMonthButton = document.getElementById("prev-month");
+    const nextMonthButton = document.getElementById("next-month");
     let activeTask = "default";
     let timer = null;
     let timeData = JSON.parse(localStorage.getItem("timeData")) || { default: 0 };
+    let currentDate = new Date();
 
     function renderTasks() {
       tasksList.innerHTML = "";
@@ -154,6 +159,53 @@
       const s = (seconds % 60).toString().padStart(2, "0");
       return `${h}h ${m}m ${s}s`;
     }
+
+    function renderCalendar() {
+      calendarBody.innerHTML = "";
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      currentMonth.textContent = `${year}-${(month + 1).toString().padStart(2, "0")}`;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const calendarGrid = document.createElement("div");
+      calendarGrid.style.display = "grid";
+      calendarGrid.style.gridTemplateColumns = "repeat(7, 1fr)";
+
+      for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement("div");
+        calendarGrid.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayCell = document.createElement("div");
+        dayCell.textContent = day;
+        dayCell.style.border = "1px solid #ccc";
+        dayCell.style.padding = "5px";
+        const taskDetails = Object.entries(timeData).map(([task, time]) => {
+          return `<div>${task}: ${formatTime(time)}</div>`;
+        }).join("");
+        dayCell.innerHTML += taskDetails;
+        calendarGrid.appendChild(dayCell);
+      }
+
+      calendarBody.appendChild(calendarGrid);
+    }
+
+    calendarButton.addEventListener("click", () => {
+      calendar.style.display = calendar.style.display === "none" ? "block" : "none";
+      renderCalendar();
+    });
+
+    prevMonthButton.addEventListener("click", () => {
+      currentDate.setMonth(currentDate.getMonth() - 1);
+      renderCalendar();
+    });
+
+    nextMonthButton.addEventListener("click", () => {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    });
 
     newTaskButton.addEventListener("click", () => {
       const taskName = prompt("Enter task name:");
